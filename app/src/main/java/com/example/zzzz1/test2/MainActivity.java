@@ -10,9 +10,9 @@ import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AudioDataReceivedListener {
     private final short duration = 100;
-    private final short sampleRate = 8000;
+    private final int sampleRate = 44100;
     private final int numSamples = duration * sampleRate;
     private final short sample[] = new short[numSamples];
     private final double freqOfTone = 440;
@@ -23,33 +23,33 @@ public int min = 0,max = 0;
 
     Handler handler = new Handler();
 
+    RecordingThread trd;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        trd = new RecordingThread(this);
     }
 
 //          Запись данных с микрофона в массив data
     public void clickButt(View view) {
-        int minBufferSize = AudioRecord.getMinBufferSize(8000, 2,
-                AudioFormat.ENCODING_PCM_16BIT);
-        AudioRecord ar = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                8000, AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, minBufferSize);
-        ar.read(data, 0, 8000);
+        trd.startRecording();
 
     }
 //           Тут нейкое шаманство и попытки отобразить что получается записать с микрофона
     public void showData(View view){
 
-   // for(int i=0;i<=1000;i++){
-     //       if(min>data[i]){min=data[i];}
-       //     if(max<data[i]){max=data[i];}
-      //  }
+        int min = Short.MAX_VALUE;
+        int max = Short.MIN_VALUE;
+     for(int i=0;i<data.length;i++){
+            if(min>data[i]){min=data[i];}
+            if(max<data[i]){max=data[i];}
+     }
 
-        TextView viewDataText1 = (TextView)findViewById(R.id.viewDataText);
+      TextView viewDataText1 = (TextView)findViewById(R.id.viewDataText);
 
-       viewDataText1.setText("21");
+       viewDataText1.setText(String.format("%d-%d", min, max));
 
 
     }
@@ -90,5 +90,12 @@ public int min = 0,max = 0;
         audioTrack.write(sample, 0, sample.length);
 
         audioTrack.play();
+    }
+
+    @Override
+    public void onAudioDataReceived(short[] data) {
+
+        this.data = data;
+
     }
 }
